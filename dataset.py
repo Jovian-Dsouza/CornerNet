@@ -1,12 +1,13 @@
-from cv2 import flip
 import torch 
 import torchvision
 import torchvision.transforms.functional as F
 import os
+import shutil
 import pandas as pd
 import kornia as K
 import numpy as np
 import math
+import pickle
 
 from utils.utils import draw_gaussian, gaussian_radius
 
@@ -48,6 +49,8 @@ class VOCDataset(torch.utils.data.Dataset):
                  mean = [0.485, 0.456, 0.406], 
                  std = [0.229, 0.224, 0.225],
                  augmentation = False,
+                 cache_dir = None,
+                 cache_refresh=True,
                  ) -> None:
         super().__init__()
         self.img_dir = os.path.join(root_dir, 'images')
@@ -66,6 +69,12 @@ class VOCDataset(torch.utils.data.Dataset):
         self.spatial_detection_h = spatial_resolution[0] // self.down_ratio
         self.spatial_detection_w = spatial_resolution[1] // self.down_ratio
         self.gaussian_iou = 0.7
+
+        self.cache_dir = cache_dir
+        if self.cache_dir is not None:
+            if cache_refresh == True or os.path.exists(self.cache_dir) == False:
+                shutil.rmtree(self.cache_dir, ignore_errors=True)
+                os.makedirs(self.cache_dir, exist_ok=True)
 
     def __len__(self):
         return len(self.annotations)
@@ -120,16 +129,33 @@ class VOCDataset(torch.utils.data.Dataset):
         return hmap_tl, hmap_br, regs_tl, regs_br, inds_tl, inds_br, ind_masks
 
     def __getitem__(self, index):
-        # print(f'\nindex: {index}')
-        label_path = os.path.join(self.label_dir, self.annotations.iloc[index, 1])
-        boxes = read_boxes(label_path) 
+        
+        cache_file = os.path.join(self.cache_dir, f'{index}.pkl') if self.cache_dir is not None else ''
+        if self.cache_dir is not None and os.path.isfile(cache_file):
+            with open(cache_file, 'rb') as f:
+                pkl_dict = pickle.load(f)
+            image = pkl_dict['image']
+            boxes = pkl_dict['boxes']
+        else:
+            label_path = os.path.join(self.label_dir, self.annotations.iloc[index, 1])
+            boxes = read_boxes(label_path) 
 
-        img_path = os.path.join(self.img_dir, self.annotations.iloc[index, 0])
-        image = torchvision.io.read_image(img_path)  # CxHxW / torch.uint8
+            img_path = os.path.join(self.img_dir, self.annotations.iloc[index, 0])
+            image = torchvision.io.read_image(img_path)  # CxHxW / torch.uint8
 
-        # Do transformations
-        # Resize
-        image = F.resize(image, self.spatial_resolution)
+            # Resize
+            image = F.resize(image, self.spatial_resolution)
+
+            # Save to cache
+            if self.cache_dir is not None:
+                with open(cache_file, 'wb') as f:
+                    pickle.dump(
+                        {
+                            "image": image,
+                            "boxes": boxes,
+                        },
+                        f
+                    )
 
         if self.augmentation:
             # Flip
@@ -147,50 +173,56 @@ class VOCDataset(torch.utils.data.Dataset):
 
         return {
             'image': image, 
-            # 'boxes': torch.Tensor(boxes),
             'hmap_tl': hmap_tl, 'hmap_br': hmap_br, #(num_classes, h//downratio, w//downratio)
             'regs_tl': regs_tl, 'regs_br': regs_br, #(max_objs, 2)
             'inds_tl': inds_tl, 'inds_br': inds_br, #(max_objs)
             'ind_masks': ind_masks #(max_objs)
         }
 
+def benchmark(N=None):
+    import time
+    N = len(dataset) if N is None else N
+    time_list = []
+    for i in range(N):
+        start_time = time.time()
+        data = dataset.__getitem__(i)
+        time_taken = time.time() - start_time
+        print(f'{i} has taken %0.4f s' % time_taken)
+        time_list.append(time_taken)
+    time_array = np.array(time_list)
+    print("Mean : %0.4f" % (time_array.mean()))
+    print(f"Total Time for {N} samples : %0.4f" % (time_array.sum()))
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from pprint import pprint
-    from utils.utils import plot_image
+    # from utils.utils import plot_image
 
     dataset = VOCDataset(
                          root_dir="../VOC100examples",
                          csv_file="100examples.csv",
+                         cache_dir='cache',
                          spatial_resolution=[512, 512],
                          augmentation=True
                         )
     print("len ", len(dataset))
+    benchmark(12) #0.042 without cache
+    benchmark(12) #0.008 with cache
 
-    data = dataset.__getitem__(69)
-    image = data['image'] 
-    # boxes = data['boxes']
-    hmap_tl = data['hmap_tl']
-    hmap_br = data['hmap_br']
-    ind_masks = data['ind_masks']
-    regs_tl = data['regs_tl']
-    regs_br = data['regs_br']
+    # data = dataset.__getitem__(69)
+    # image = data['image'] 
+    # # boxes = data['boxes']
+    # hmap_tl = data['hmap_tl']
+    # hmap_br = data['hmap_br']
+    # ind_masks = data['ind_masks']
+    # regs_tl = data['regs_tl']
+    # regs_br = data['regs_br']
 
-    for k in data.keys():
-        print(k, data[k].shape)
+    # for k in data.keys():
+    #     print(k, data[k].shape)
 
     # plot_image(image.permute(1,2,0), boxes.tolist())
 
     # for i in range(len(dataset)):
     #     print(i)
     #     data = dataset.__getitem__(i)
-
-# image torch.Size([3, 512, 512])
-# boxes torch.Size([1, 5])
-# hmap_tl (20, 128, 128)
-# hmap_br (20, 128, 128)
-# regs_tl (100, 2)
-# regs_br (100, 2)
-# inds_tl (100,)
-# inds_br (100,)
-# ind_masks (100,)

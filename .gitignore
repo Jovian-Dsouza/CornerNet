@@ -2,3 +2,4 @@
 *.ipynb
 lightning_logs/
 results/
+cache/
