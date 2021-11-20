@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from lib.cpool import TopPool, BottomPool, LeftPool, RightPool
+# from lib.cpool import TopPool, BottomPool, LeftPool, RightPool
+from cornerpool import TopPool, BottomPool, LeftPool, RightPool
 
 class Conv(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, batchnorm=True):
@@ -117,7 +118,7 @@ class HourGlass(nn.Module):
         up2 = self.up(x) # upsample
         return up1 + up2
 
-class CenterNet(pl.LightningModule):
+class CornerNet(pl.LightningModule):
     def __init__(self, nstack, channels, modules, num_classes, cnv_dim=256, **kwargs):
         super().__init__()
         # self.save_hyperparameters()
@@ -204,7 +205,7 @@ get_hourglass = {
                         'modules': [2, 2, 2, 2, 2, 4]
                         }
 }
-class CenterNetPL(CenterNet):
+class CornerNetPL(CornerNet):
     def __init__(self, model_type, num_classes, cnv_dim=256, **kwargs):
         self.save_hyperparameters()
         hg = get_hourglass[model_type]
@@ -217,19 +218,7 @@ class CenterNetPL(CenterNet):
             **kwargs
         )
 
-
-if __name__ == '__main__':
-    x = torch.randn(1, 3, 512, 512)
-
-    channels=[256, 256, 384, 384, 384, 512]
-    modules=[2, 2, 2, 2, 2, 4]
-    # model = CenterNetPL(model_type='tiny_hourglass', num_classes=20)
-    model = CenterNetPL(model_type='small_hourglass', num_classes=20)
-    # print(model)
-    # model.train()
-    # y = model(x)
-    # print(len(y))
-
+def test_outputs():
     with torch.no_grad():
         hmap_tl, hmap_br, embd_tl, embd_br, regs_tl, regs_br = model(x)[-1]
         print("hmap_tl", hmap_tl.shape, hmap_tl.min(), hmap_tl.max())
@@ -239,4 +228,11 @@ if __name__ == '__main__':
         print("regs_tl", regs_tl.shape)
         print("regs_br", regs_br.shape)
 
-    # print(model.hparams)
+if __name__ == '__main__':
+    # from torchsummary import summary
+    from torchinfo import summary
+
+    # x = torch.randn(1, 3, 512, 512)
+    x = torch.randn(1, 3, 256, 256)
+    model = CornerNetPL(model_type='small_hourglass', num_classes=20)
+    summary(model, x.shape)

@@ -7,7 +7,7 @@ import torch
 import pytorch_lightning as pl
 
 from trainer import ObjectDetectionModule
-from model import CenterNetPL
+from model import CornerNetPL
 from DataModule import DataModule
 import shutil
 import os
@@ -16,29 +16,31 @@ import pickle
 def main():
     datamodule = DataModule(
         root_dir="../VOC100examples",
-        csv_file="100examples.csv",
-        spatial_resolution=[512, 512],
+        # spatial_resolution=[512, 512],
+        spatial_resolution=[256, 256],
         batch_size=1, 
         num_workers=0,
         pin_memory=True,
+        cache_dir='cache',
+        cache_refresh=True,
     )
-    model = CenterNetPL(
-        model_type='small_hourglass',
+    model = CornerNetPL(
+        model_type='tiny_hourglass',
         num_classes=20,
         optimizer='adam',
-        lr=2.5e-4,
+        lr=5e-4,
     )
     model = ObjectDetectionModule(model)
 
     trainer = pl.Trainer(
                         # profiler="advanced",
                         fast_dev_run=False, 
-                        max_epochs=10, 
+                        max_epochs=1, 
                         precision=32,
                         benchmark=True,
                         gpus=-1,
                         # progress_bar_refresh_rate=20, #for colab
-                        # limit_train_batches=1,
+                        limit_train_batches=1,
                         # limit_val_batches=0,
                         # default_root_dir='..',
                         )
@@ -67,7 +69,7 @@ if __name__ == '__main__':
     from tensorboard import program
     import webbrowser
 
-    # log_dir = '../lightning_logs'
+    log_dir = 'lightning_logs'
     # launch_tensorboard()
     main()
     
