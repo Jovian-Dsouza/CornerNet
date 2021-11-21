@@ -107,10 +107,14 @@ class VOCDataset(torch.utils.data.Dataset):
             y1 = max(min(y1, self.spatial_detection_h-1), 0)
             
             width, height = math.ceil(x2-x1), math.ceil(y2-y1)
+            # assert width > 0 , f'width should be greater than 0, error at {self.current_index}'
+            # assert height > 0 , f'height should be greater than 0, error at {self.current_index}'
+            if width <= 0:
+                print(f'width should be greater than 0, error at {self.current_index}')
+            if height <= 0:
+                print(f'height should be greater than 0, error at {self.current_index}')
+
             radius = max(0, int(gaussian_radius((height, width), self.gaussian_iou)))
-            assert width > 0 , f'width should be greater than 0, {x2}-{x1}'
-            assert height > 0 , f'height should be greater than 0 {y2}-{y1}'
-            
             ix1, iy1, ix2, iy2 = int(x1), int(y1), int(x2), int(y2)
             draw_gaussian(hmap_tl[label], [ix1, iy1], radius)
             draw_gaussian(hmap_br[label], [ix2, iy2], radius)
@@ -129,7 +133,7 @@ class VOCDataset(torch.utils.data.Dataset):
         return hmap_tl, hmap_br, regs_tl, regs_br, inds_tl, inds_br, ind_masks
 
     def __getitem__(self, index):
-        
+        self.current_index = index
         cache_file = os.path.join(self.cache_dir, f'{index}.pkl') if self.cache_dir is not None else ''
         if self.cache_dir is not None and os.path.isfile(cache_file):
             with open(cache_file, 'rb') as f:
