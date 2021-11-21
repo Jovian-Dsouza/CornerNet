@@ -7,13 +7,14 @@ import torch
 import pytorch_lightning as pl
 
 from trainer import ObjectDetectionModule
-from model import CornerNetPL
+from models.model import CornerNetPL
 from DataModule import DataModule
 import shutil
 import os
 import pickle
 
 def main():
+    pl.seed_everything(137, workers=True)
     datamodule = DataModule(
         root_dir="../VOC100examples",
         # spatial_resolution=[512, 512],

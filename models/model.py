@@ -234,5 +234,5 @@ if __name__ == '__main__':
 
     # x = torch.randn(1, 3, 512, 512)
     x = torch.randn(1, 3, 256, 256)
-    model = CornerNetPL(model_type='small_hourglass', num_classes=20)
+    model = CornerNetPL(model_type='tiny_hourglass', num_classes=20)
     summary(model, x.shape)
