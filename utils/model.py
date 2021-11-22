@@ -26,6 +26,13 @@ def load_state_dict(model, ckpt_file):
     model.load_state_dict(_state_dict)
     return model 
 
-
+def extract_checkpoint(ckpt_path, save_path):
+    '''
+    Extracts the state_dict from the checkpoint path
+    '''
+    state_dict = torch.load(ckpt_path,
+                         map_location=lambda storage, loc: storage)['state_dict']
+    torch.save({'state_dict' : state_dict}, save_path)
+    
 if __name__ == '__main__':
     get_latest_pl_checkpoint()
