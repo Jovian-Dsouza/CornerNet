@@ -9,7 +9,8 @@ import torch
 import pytorch_lightning as pl
 
 from trainer import ObjectDetectionModule
-from models.model import CornerNetPL
+from models.hourglass import CornerNetPL
+from models.resnet import CornerNetPL
 from DataModule import DataModule
 import shutil
 import os
@@ -44,7 +45,7 @@ def main():
         cache_refresh=True,
     )
     model = CornerNetPL(
-        model_type='tiny_hourglass',
+        model_type='resnet_18',
         num_classes=20,
         optimizer='adam',
         lr=5e-4,
