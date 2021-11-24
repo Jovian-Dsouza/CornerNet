@@ -7,6 +7,25 @@ This repo contains implementation of CornerNet in Pytorch-Lightning
 
 [Paper](https://arxiv.org/abs/1808.01244)
 
+## Results
+
+<table>
+  <tr>
+    <td> <img src="result/0.png" height = 255 ></td>
+    <td> <img src="result/1.png" height = 255 ></td>
+  </tr> 
+   <tr>
+    <td> <img src="result/2.png" height = 255 ></td>
+    <td> <img src="result/3.png" height = 255 ></td>
+  </tr> 
+  <tr>
+    <td> <img src="result/5.png" height = 255 ></td>
+    <td> <img src="result/6.png" height = 255 ></td>
+  </tr>
+</table>
+
+
+
 ## Getting started 
 
 ### Clone this Repo
