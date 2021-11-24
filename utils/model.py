@@ -14,14 +14,17 @@ def load_state_dict_with_trainer(model, ckpt_file):
     '''
     Load model which is embedded in trainer class
     '''
-    model.load_state_dict(torch.load(ckpt_file)['state_dict'])
+    ckpt_dict = torch.load(ckpt_file)
+    state_dict = ckpt_dict['state_dict'] if 'state_dict' in ckpt_dict else ckpt_dict
+    model.load_state_dict(state_dict)
     return model 
 
 def load_state_dict(model, ckpt_file):
     '''
     load model without the trainer class
     '''
-    state_dict = torch.load(ckpt_file)['state_dict']
+    ckpt_dict = torch.load(ckpt_file)
+    state_dict = ckpt_dict['state_dict'] if 'state_dict' in ckpt_dict else ckpt_dict
     _state_dict = {k.replace('model.', ''):v for k, v in state_dict.items()}
     model.load_state_dict(_state_dict)
     return model 

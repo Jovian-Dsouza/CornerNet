@@ -9,8 +9,8 @@ import torch
 import pytorch_lightning as pl
 
 from trainer import ObjectDetectionModule
-from models.hourglass import CornerNetPL
-from models.resnet import CornerNetPL
+from models.hourglass import CornerNetPL as HourGlassCornerNetPL
+from models.resnet import CornerNetPL as ResCornerNetPL
 from DataModule import DataModule
 import shutil
 import os
@@ -44,7 +44,7 @@ def main():
         cache_dir='cache',
         cache_refresh=True,
     )
-    model = CornerNetPL(
+    model = ResCornerNetPL(
         model_type='resnet_18',
         num_classes=20,
         optimizer='adam',
@@ -55,14 +55,14 @@ def main():
     trainer = pl.Trainer(
                         # profiler="advanced",
                         # fast_dev_run=False,
-                        auto_lr_find=True, 
+                        # auto_lr_find=True, 
                         max_epochs=1, 
                         precision=32,
                         benchmark=True,
                         gpus=-1,
                         # progress_bar_refresh_rate=20, #for colab
-                        # limit_train_batches=1,
-                        # limit_val_batches=1,
+                        limit_train_batches=1,
+                        limit_val_batches=1,
                         # default_root_dir='..',
                         callbacks=[checkpoint_cb],
                         )
