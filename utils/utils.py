@@ -106,48 +106,69 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="midpoint"):
     box1_area = abs((box1_x2 - box1_x1) * (box1_y2 - box1_y1))
     box2_area = abs((box2_x2 - box2_x1) * (box2_y2 - box2_y1))
 
-    return intersection / (box1_area + box2_area - intersection + 1e-6)
+    return intersection / (box1_area + box2_area - intersection + 1e-8)
 
+def non_max_suppression(dets, prob_threshold=0.5, iou_threshold=0.5):
+    '''Does Non Max Suppression given bboxes'''
+    dets_th = dets[dets[:, 4] > prob_threshold].tolist()
+    dets_nms = []
 
-def non_max_suppression(bboxes, iou_threshold, threshold, box_format="corners"):
-    """
-    Does Non Max Suppression given bboxes
+    while(dets_th):
+        best_box = dets_th.pop(0)
+        dets_nms.append(best_box)
 
-    Parameters:
-        bboxes (list): list of lists containing all bboxes with each bboxes
-        specified as [class_pred, prob_score, x1, y1, x2, y2]
-        iou_threshold (float): threshold where predicted bboxes is correct
-        threshold (float): threshold to remove predicted bboxes (independent of IoU) 
-        box_format (str): "midpoint" or "corners" used to specify bboxes
-
-    Returns:
-        list: bboxes after performing NMS given a specific IoU threshold
-    """
-
-    assert type(bboxes) == list
-
-    bboxes = [box for box in bboxes if box[1] > threshold]
-    bboxes = sorted(bboxes, key=lambda x: x[1], reverse=True)
-    bboxes_after_nms = []
-
-    while bboxes:
-        chosen_box = bboxes.pop(0)
-
-        bboxes = [
-            box
-            for box in bboxes
-            if box[0] != chosen_box[0]
+        dets_th = [
+            det for det in dets_th
+            if det[-1] != best_box[-1] #keep if class is differenrt
             or intersection_over_union(
-                torch.tensor(chosen_box[2:]),
-                torch.tensor(box[2:]),
-                box_format=box_format,
-            )
-            < iou_threshold
+                torch.Tensor(best_box[:4]),
+                torch.Tensor(det[:4]),
+                box_format='corners',
+            ) < iou_threshold
         ]
+    return np.array(dets_nms)
 
-        bboxes_after_nms.append(chosen_box)
 
-    return bboxes_after_nms
+
+# def non_max_suppression(bboxes, iou_threshold, threshold, box_format="corners"):
+#     """
+#     Does Non Max Suppression given bboxes
+
+#     Parameters:
+#         bboxes (list): list of lists containing all bboxes with each bboxes
+#         specified as [class_pred, prob_score, x1, y1, x2, y2]
+#         iou_threshold (float): threshold where predicted bboxes is correct
+#         threshold (float): threshold to remove predicted bboxes (independent of IoU) 
+#         box_format (str): "midpoint" or "corners" used to specify bboxes
+
+#     Returns:
+#         list: bboxes after performing NMS given a specific IoU threshold
+#     """
+
+#     assert type(bboxes) == list
+
+#     bboxes = [box for box in bboxes if box[1] > threshold]
+#     bboxes = sorted(bboxes, key=lambda x: x[1], reverse=True)
+#     bboxes_after_nms = []
+
+#     while bboxes:
+#         chosen_box = bboxes.pop(0)
+
+#         bboxes = [
+#             box
+#             for box in bboxes
+#             if box[0] != chosen_box[0]
+#             or intersection_over_union(
+#                 torch.tensor(chosen_box[2:]),
+#                 torch.tensor(box[2:]),
+#                 box_format=box_format,
+#             )
+#             < iou_threshold
+#         ]
+
+#         bboxes_after_nms.append(chosen_box)
+
+#     return bboxes_after_nms
 
 
 def mean_average_precision(

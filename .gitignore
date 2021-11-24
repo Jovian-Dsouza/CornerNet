@@ -3,3 +3,4 @@
 lightning_logs/
 results/
 cache/
+checkpoints/
