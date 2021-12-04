@@ -28,17 +28,31 @@ This repo contains implementation of CornerNet in Pytorch-Lightning
 
 ## Getting started 
 
+### Requirements
+
+- pytorch 1.9.1
+- kornia
+- cornerpool
+- pytorch-lightning
+- tqdm
+
 ### Clone this Repo
 ```bash
 CornerNet_ROOT=/path/to/clone/CornerNet
 git clone https://github.com/Jovian-Dsouza/CornerNet.git $CornerNet_ROOT
 ```
 
-### Install Corner Pooling
+### Dataset
+Downlaod the Pascal voc dataset 
 
-```bash
-cd $CornerNet_ROOT/lib/cpool
-python setup.py install --user
+### Train 
+```
+python train_pl.py
+```
+
+### Evaluate 
+```
+python evaluate.py
 ```
 
 ## References
